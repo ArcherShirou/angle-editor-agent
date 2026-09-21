@@ -8,18 +8,24 @@ on:
 jobs:
   discover:
     runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
+        if: env.OPENAI_API_KEY != '' && env.OPENAI_MODEL != ''
         with:
           python-version: "3.12"
           cache: pip
-      - run: pip install -e .
-      - run: angle-agent discover
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      - if: env.OPENAI_API_KEY == '' || env.OPENAI_MODEL == ''
+        run: echo "Model or API key is not configured; skipping."
+      - if: env.OPENAI_API_KEY != '' && env.OPENAI_MODEL != ''
+        run: pip install -e .
+      - if: env.OPENAI_API_KEY != '' && env.OPENAI_MODEL != ''
+        run: angle-agent discover
       - uses: actions/upload-artifact@v4
+        if: env.OPENAI_API_KEY != '' && env.OPENAI_MODEL != ''
         with:
           name: daily-topic-cards
           path: drafts/
-

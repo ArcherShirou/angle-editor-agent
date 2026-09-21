@@ -23,6 +23,11 @@ class AppTest(unittest.TestCase):
         error.code = "credit_balance_exhausted"
         self.assertIn("billing", app.api_error_message(error))
 
+    def test_model_must_be_explicit(self):
+        with patch.dict("os.environ", {"OPENAI_MODEL": ""}, clear=True):
+            with self.assertRaisesRegex(RuntimeError, "OPENAI_MODEL"):
+                app.build_agent()
+
 
 if __name__ == "__main__":
     unittest.main()

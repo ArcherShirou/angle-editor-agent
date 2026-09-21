@@ -25,8 +25,10 @@ pip install -e .
 
 ```text
 OPENAI_API_KEY=...
-# 可选：OPENAI_MODEL=gpt-5.4-mini
+OPENAI_MODEL=
 ```
+
+模型暂不预设。决定使用哪个模型后，再填写 `OPENAI_MODEL`。
 
 ## 使用
 
@@ -57,3 +59,8 @@ angle-agent revise drafts/2026-09-21/120000-article.md \
 
 如果出现“没有可用额度”，请在 [OpenAI API Billing](https://platform.openai.com/settings/organization/billing)
 添加 API 额度。ChatGPT 订阅与 API 计费相互独立。
+
+## 每日任务
+
+GitHub Actions 每天北京时间 09:00 检查一次配置。只有仓库 Secret `OPENAI_API_KEY`
+和仓库 Variable `OPENAI_MODEL` 都已设置时才会生成观点卡；当前模型留空，因此任务会安全跳过。

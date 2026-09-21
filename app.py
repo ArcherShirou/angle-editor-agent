@@ -67,9 +67,12 @@ def api_error_message(error: Exception) -> str | None:
 def build_agent():
     from agents import Agent, WebSearchTool
 
+    model = os.getenv("OPENAI_MODEL", "").strip()
+    if not model:
+        raise RuntimeError("缺少 OPENAI_MODEL；选定模型后请在 .env.local 中配置")
     return Agent(
         name="视角主编",
-        model=os.getenv("OPENAI_MODEL", "gpt-5.4-mini"),
+        model=model,
         instructions="""
 你是一位有人类主编把关的观点编辑 Agent。你的任务不是追逐流量或故意唱反调，
 而是从心理学、社会心理、行为科学和日常经验中寻找不常见但站得住的观察角度。
