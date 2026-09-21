@@ -115,8 +115,11 @@ async def write(topic: str, notes: str) -> Path:
 
 先核查相关事实和来源，再生成一个内容包：
 1. 核心观点与论证边界；
-2. 小红书中文稿（标题、正文、3-5 个克制标签）；
-3. Twitter/X 英文 thread（最多 6 条，每条简洁）；
+2. 小红书中文稿（标题、正文、3-5 个克制标签），严格放在
+   <!-- XHS_START --> 与 <!-- XHS_END --> 之间；
+3. Twitter/X 英文 thread（最多 6 条，每条不超过 280 字符），严格放在
+   <!-- X_START --> 与 <!-- X_END --> 之间；多条帖子用单独一行
+   ---THREAD--- 分隔；
 4. 事实来源；
 5. 发布前仍需人类确认的风险。
 不要声称已经发布。
@@ -128,6 +131,7 @@ async def revise(path: str, feedback: str) -> Path:
     source = safe_draft(path)
     task = f"""
 请根据人类主编反馈修改下面的草稿。保留可靠来源；若反馈与事实冲突，指出冲突而不是迎合。
+必须保留 XHS_START/XHS_END、X_START/X_END 和 THREAD 分隔标记，供发布模块读取。
 
 反馈：{feedback}
 
@@ -150,6 +154,9 @@ def parser() -> argparse.ArgumentParser:
     edit = commands.add_parser("revise", help="根据反馈修改草稿并记住偏好")
     edit.add_argument("file")
     edit.add_argument("--feedback", required=True)
+    publish = commands.add_parser("publish", help="预览或发布已审核的 X 内容")
+    publish.add_argument("file")
+    publish.add_argument("--confirm", default="", help="实际发布时填写 PUBLISH")
     return cli
 
 
@@ -158,7 +165,26 @@ async def dispatch(args: argparse.Namespace) -> Path:
         return await discover(args.count)
     if args.command == "write":
         return await write(args.topic, args.notes)
-    return await revise(args.file, args.feedback)
+    if args.command == "revise":
+        return await revise(args.file, args.feedback)
+
+    from publisher import extract_x_posts, publish_x_thread
+
+    source = safe_draft(args.file)
+    posts = extract_x_posts(source.read_text(encoding="utf-8"))
+    if args.confirm != "PUBLISH":
+        print("\n\n--- 下一条 ---\n\n".join(posts))
+        raise SystemExit("以上仅为预览；确认无误后添加 --confirm PUBLISH")
+    token = os.getenv("X_USER_ACCESS_TOKEN", "").strip()
+    if not token:
+        raise RuntimeError("缺少 X_USER_ACCESS_TOKEN；请在 .env.local 中配置")
+    ids = await asyncio.to_thread(publish_x_thread, posts, token)
+    return save_markdown(
+        "published-x",
+        "# X 发布记录\n\n"
+        + f"来源：`{source.relative_to(ROOT)}`\n\n"
+        + "\n".join(f"- https://x.com/i/web/status/{post_id}" for post_id in ids),
+    )
 
 
 def main() -> None:

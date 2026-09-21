@@ -26,6 +26,7 @@ pip install -e .
 ```text
 OPENAI_API_KEY=...
 OPENAI_MODEL=
+X_USER_ACCESS_TOKEN=
 ```
 
 模型暂不预设。决定使用哪个模型后，再填写 `OPENAI_MODEL`。
@@ -43,9 +44,24 @@ angle-agent write --topic "情绪价值正在变成关系绩效" \
 # 按反馈改稿；输出为新文件，不覆盖原稿
 angle-agent revise drafts/2026-09-21/120000-article.md \
   --feedback "开头更生活化，删掉居高临下的表达"
+
+# 先预览已审核的 X 内容，不会发布
+angle-agent publish drafts/2026-09-21/120000-article.md
+
+# 明确确认后，通过 X 官方 API 发布
+angle-agent publish drafts/2026-09-21/120000-article.md --confirm PUBLISH
 ```
 
 结果保存在 `drafts/YYYY-MM-DD/`。编辑 `profile.md` 可以直接调整创作人格。
+
+## 自动发布
+
+X 发布使用官方 `POST /2/tweets` 接口。`X_USER_ACCESS_TOKEN` 必须是包含 `tweet.write`
+权限的 OAuth 2.0 用户访问令牌。未提供 `--confirm PUBLISH` 时命令只显示预览；发布成功后
+会保存包含帖子链接的本地记录。
+
+小红书稿件仍会生成在 `XHS_START/XHS_END` 标记之间，但当前不自动发布。小红书公开平台
+尚未提供适用于普通创作者笔记的通用发布接口，因此项目不使用模拟点击或非官方接口。
 
 ## 内容边界
 
